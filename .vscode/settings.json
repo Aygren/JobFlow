@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /home/aygren/JobFlow && python3 -c \"import sys; sys\\.path\\.insert\\(0,'src'\\); import db; db\\.init_db\\(\\); db\\.add_channel\\('test_channel'\\); print\\(db\\.get_active_channels\\(\\)\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
