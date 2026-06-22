@@ -1,5 +1,6 @@
 import os
 import asyncio
+import sys
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.sessions import StringSession # Добавили импорт
@@ -12,6 +13,11 @@ api_id = int(os.getenv('API_ID'))
 api_hash = os.getenv('API_HASH')
 session_string = os.getenv('SESSION_STRING') # Добавили переменную
 supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+
+if not api_id or not api_hash or not session_string:
+    raise ValueError("ОДНА ИЛИ НЕСКОЛЬКО ПЕРЕМЕННЫХ ОКРУЖЕНИЯ НЕ ЗАГРУЖЕНЫ!")
+else:
+    api_id = int(api_id)
 
 async def run_scraper():
     channels = get_active_channels()
