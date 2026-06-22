@@ -1,6 +1,6 @@
 from flask import Flask
 import threading
-import scraper
+from . import scraper
 
 app = Flask(__name__)
 
