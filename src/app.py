@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 @app.route('/run')
 def run_job():
+    print("DEBUG: Функция run_job вызвана!")  # Это должно появиться в логах
     # Запускаем парсер в отдельном потоке, чтобы не блокировать веб-сервер
     threading.Thread(target=scraper.run_scraper).start()
     return "Парсер запущен!", 200
