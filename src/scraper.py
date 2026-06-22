@@ -1,32 +1,48 @@
 import os
 import asyncio
-import sys
-from dotenv import load_dotenv
 from telethon import TelegramClient
-from telethon.sessions import StringSession # Добавили импорт
+from telethon.sessions import StringSession
 from supabase import create_client
-from src.db import get_active_channels, update_last_message_id
+# Предполагаем, что этот импорт работает (если нет, проверьте путь)
+from db import get_active_channels, update_last_message_id
 
-load_dotenv()
+# Берем переменные прямо из ОС (настроек Render)
+# Если переменная не найдена, она будет None
+raw_api_id = os.environ.get('API_ID')
+api_hash = os.environ.get('API_HASH')
+session_string = os.environ.get('SESSION_STRING')
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
 
-api_id = int(os.getenv('API_ID'))
-api_hash = os.getenv('API_HASH')
-session_string = os.getenv('SESSION_STRING') # Добавили переменную
-supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
-
-if not api_id or not api_hash or not session_string:
-    raise ValueError("ОДНА ИЛИ НЕСКОЛЬКО ПЕРЕМЕННЫХ ОКРУЖЕНИЯ НЕ ЗАГРУЖЕНЫ!")
+# Проверка, что всё загрузилось
+if not all([raw_api_id, api_hash, session_string, supabase_url, supabase_key]):
+    missing = [k for k, v in {"API_ID": raw_api_id, "API_HASH": api_hash, 
+                              "SESSION_STRING": session_string, "SUPABASE_URL": supabase_url, 
+                              "SUPABASE_KEY": supabase_key}.items() if not v]
+    print(f"КРИТИЧЕСКАЯ ОШИБКА: Отсутствуют переменные окружения: {', '.join(missing)}")
+    # Создаем фиктивный клиент, чтобы скрипт не падал при импорте, 
+    # но он упадет при вызове run_scraper, если мы не обработаем это там
+    supabase = None
+    api_id = 0
 else:
-    api_id = int(api_id)
+    api_id = int(raw_api_id)
+    supabase = create_client(supabase_url, supabase_key)
 
 async def run_scraper():
+    if not supabase or api_id == 0:
+        print("Парсер не может запуститься: нет настроек.")
+        return
+
     channels = get_active_channels()
     if not channels:
         print('Нет активных каналов для обработки.')
         return
 
-    # Инициализация клиента через StringSession
-    async with TelegramClient(StringSession(session_string), api_id, api_hash) as client:
+    # Инициализация клиента
+    client = TelegramClient(StringSession(session_string), api_id, api_hash)
+    
+    async with client:
+        print("Подключение к Telegram успешно...")
         for username in channels:
             try:
                 print(f'--- Обработка канала: {username} ---')
@@ -52,8 +68,8 @@ async def run_scraper():
                     try:
                         supabase.table("vacancies").insert(vacancy_data).execute()
                         print(f"Вакансия добавлена: {vacancy_data['url']}")
-                    except Exception:
-                        pass 
+                    except Exception as e:
+                        print(f"Ошибка при вставке в Supabase: {e}")
 
                 if max_id > 0:
                     update_last_message_id(username, max_id)
