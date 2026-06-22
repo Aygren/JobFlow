@@ -2,6 +2,7 @@ import os
 import asyncio
 from dotenv import load_dotenv
 from telethon import TelegramClient
+from telethon.sessions import StringSession # Добавили импорт
 from supabase import create_client
 from src.db import get_active_channels, update_last_message_id
 
@@ -9,6 +10,7 @@ load_dotenv()
 
 api_id = int(os.getenv('API_ID'))
 api_hash = os.getenv('API_HASH')
+session_string = os.getenv('SESSION_STRING') # Добавили переменную
 supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
 async def run_scraper():
@@ -17,13 +19,13 @@ async def run_scraper():
         print('Нет активных каналов для обработки.')
         return
 
-    async with TelegramClient('jobflow_session', api_id, api_hash) as client:
+    # Инициализация клиента через StringSession
+    async with TelegramClient(StringSession(session_string), api_id, api_hash) as client:
         for username in channels:
             try:
                 print(f'--- Обработка канала: {username} ---')
                 await asyncio.sleep(2)
                 
-                # Получаем сообщения новее тех, что мы уже сохранили
                 messages = await client.get_messages(username, limit=50)
 
                 max_id = 0
@@ -31,7 +33,6 @@ async def run_scraper():
                     if not message.text:
                         continue
                     
-                    # Отслеживаем самый большой ID
                     if message.id > max_id:
                         max_id = message.id
                         
@@ -46,9 +47,8 @@ async def run_scraper():
                         supabase.table("vacancies").insert(vacancy_data).execute()
                         print(f"Вакансия добавлена: {vacancy_data['url']}")
                     except Exception:
-                        pass # Скорее всего, вакансия уже существует
+                        pass 
 
-                # Сохраняем прогресс в БД
                 if max_id > 0:
                     update_last_message_id(username, max_id)
                     print(f"Обновлен last_message_id для {username}: {max_id}")
