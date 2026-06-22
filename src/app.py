@@ -8,11 +8,17 @@ import scraper
 
 app = Flask(__name__)
 
+import asyncio
+
 @app.route('/run')
 def run_job():
-    print("DEBUG: Функция run_job вызвана!")  # Это должно появиться в логах
-    # Запускаем парсер в отдельном потоке, чтобы не блокировать веб-сервер
-    threading.Thread(target=scraper.run_scraper).start()
+    print("DEBUG: Функция run_job вызвана!")
+    
+    # Запускаем асинхронную функцию через asyncio.run в отдельном потоке
+    def start_async_task():
+        asyncio.run(scraper.run_scraper())
+
+    threading.Thread(target=start_async_task).start()
     return "Парсер запущен!", 200
 
 @app.route('/')
