@@ -42,7 +42,7 @@ async def run_scraper():
     # который предотвращает запрос авторизации, если сессия уже есть.
     await client.start()
     
-    print("Подключение к Telegram успешно...")
+    print("Подключение к Telegram успешно...", flush=True)
     
     try:
         for username in channels:
@@ -69,7 +69,7 @@ async def run_scraper():
                     
                     try:
                         supabase.table("vacancies").insert(vacancy_data).execute()
-                        print(f"Вакансия добавлена: {vacancy_data['url']}")
+                        print(f"Вакансия добавлена: {vacancy_data['url']}", flush=True)
                     except Exception as e:
                         print(f"Ошибка при вставке в Supabase: {e}")
 
