@@ -3,25 +3,21 @@ import asyncio
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from supabase import create_client
-# Предполагаем, что этот импорт работает (если нет, проверьте путь)
 from db import get_active_channels, update_last_message_id
 
-# Берем переменные прямо из ОС (настроек Render)
-# Если переменная не найдена, она будет None
+# Настройка переменных
 raw_api_id = os.environ.get('API_ID')
 api_hash = os.environ.get('API_HASH')
 session_string = os.environ.get('SESSION_STRING')
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 
-# Проверка, что всё загрузилось
+# Проверка переменных
 if not all([raw_api_id, api_hash, session_string, supabase_url, supabase_key]):
     missing = [k for k, v in {"API_ID": raw_api_id, "API_HASH": api_hash, 
                               "SESSION_STRING": session_string, "SUPABASE_URL": supabase_url, 
                               "SUPABASE_KEY": supabase_key}.items() if not v]
     print(f"КРИТИЧЕСКАЯ ОШИБКА: Отсутствуют переменные окружения: {', '.join(missing)}")
-    # Создаем фиктивный клиент, чтобы скрипт не падал при импорте, 
-    # но он упадет при вызове run_scraper, если мы не обработаем это там
     supabase = None
     api_id = 0
 else:
@@ -38,11 +34,17 @@ async def run_scraper():
         print('Нет активных каналов для обработки.')
         return
 
-    # Инициализация клиента
+    # Инициализация клиента с использованием сессии
     client = TelegramClient(StringSession(session_string), api_id, api_hash)
     
-    async with client:
-        print("Подключение к Telegram успешно...")
+    # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: 
+    # Вместо простого 'async with client:' вызываем start() с параметром,
+    # который предотвращает запрос авторизации, если сессия уже есть.
+    await client.start()
+    
+    print("Подключение к Telegram успешно...")
+    
+    try:
         for username in channels:
             try:
                 print(f'--- Обработка канала: {username} ---')
@@ -78,6 +80,9 @@ async def run_scraper():
             except Exception as e:
                 print(f'Ошибка при работе с каналом {username}: {e}')
                 await asyncio.sleep(5)
+    finally:
+        # Корректное закрытие сессии
+        await client.disconnect()
 
 if __name__ == '__main__':
     asyncio.run(run_scraper())
