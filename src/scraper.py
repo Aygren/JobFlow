@@ -29,6 +29,7 @@ async def run_scraper():
         print("Парсер не может запуститься: нет настроек.")
         return
     
+    # Отладочный вывод для проверки сессии
     print(f"DEBUG: Session string is: {session_string[:10]}...{session_string[-10:] if session_string else 'None'}", flush=True)
     if not session_string:
         print("КРИТИЧЕСКАЯ ОШИБКА: Переменная SESSION_STRING пуста!", flush=True)
@@ -39,14 +40,11 @@ async def run_scraper():
         print('Нет активных каналов для обработки.')
         return
 
-    # Инициализация клиента с использованием сессии
+    # Инициализация клиента
     client = TelegramClient(StringSession(session_string), api_id, api_hash)
     
-    # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: 
-    # Вместо простого 'async with client:' вызываем start() с параметром,
-    # который предотвращает запрос авторизации, если сессия уже есть.
+    # Запуск клиента
     await client.start()
-    
     print("Подключение к Telegram успешно...", flush=True)
     
     try:
@@ -73,10 +71,11 @@ async def run_scraper():
                     }
                     
                     try:
-                        supabase.table("vacancies").insert(vacancy_data).execute()
-                        print(f"Вакансия добавлена: {vacancy_data['url']}", flush=True)
+                        # Использование upsert вместо insert предотвращает ошибки дубликатов
+                        supabase.table("vacancies").upsert(vacancy_data, on_conflict='url').execute()
+                        print(f"Вакансия обработана: {vacancy_data['url']}", flush=True)
                     except Exception as e:
-                        print(f"Ошибка при вставке в Supabase: {e}")
+                        print(f"Ошибка при записи в Supabase: {e}")
 
                 if max_id > 0:
                     update_last_message_id(username, max_id)

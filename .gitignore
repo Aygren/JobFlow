@@ -220,3 +220,4 @@ __marimo__/
 
 *.session
 telegram_client.py
+gen_session.py
