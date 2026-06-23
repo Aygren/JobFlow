@@ -29,7 +29,6 @@ async def run_scraper():
         print("Парсер не может запуститься: нет настроек.")
         return
     
-    # Отладочный вывод для проверки сессии
     print(f"DEBUG: Session string is: {session_string[:10]}...{session_string[-10:] if session_string else 'None'}", flush=True)
     if not session_string:
         print("КРИТИЧЕСКАЯ ОШИБКА: Переменная SESSION_STRING пуста!", flush=True)
@@ -40,10 +39,7 @@ async def run_scraper():
         print('Нет активных каналов для обработки.')
         return
 
-    # Инициализация клиента
     client = TelegramClient(StringSession(session_string), api_id, api_hash)
-    
-    # Запуск клиента
     await client.start()
     print("Подключение к Telegram успешно...", flush=True)
     
@@ -63,19 +59,26 @@ async def run_scraper():
                     if message.id > max_id:
                         max_id = message.id
                         
+                    url = f"https://t.me/{username}/{message.id}"
+                    
+                    # Проверяем, есть ли уже такая вакансия
+                    existing = supabase.table("vacancies").select("id").eq("url", url).execute()
+                    if existing.data:
+                        print(f"Вакансия уже существует, стоп по каналу {username}: {url}", flush=True)
+                        break  # Прерываем цикл обработки этого канала
+                    
                     vacancy_data = {
                         "title": (message.text[:47] + '...') if len(message.text) > 50 else message.text,
-                        "url": f"https://t.me/{username}/{message.id}",
+                        "url": url,
                         "description": message.text,
                         "status": "new"
                     }
                     
                     try:
-                        # Использование upsert вместо insert предотвращает ошибки дубликатов
-                        supabase.table("vacancies").upsert(vacancy_data, on_conflict='url').execute()
-                        print(f"Вакансия обработана: {vacancy_data['url']}", flush=True)
+                        supabase.table("vacancies").insert(vacancy_data).execute()
+                        print(f"Вакансия добавлена: {url}", flush=True)
                     except Exception as e:
-                        print(f"Ошибка при записи в Supabase: {e}")
+                        print(f"Ошибка при записи: {e}")
 
                 if max_id > 0:
                     update_last_message_id(username, max_id)
@@ -85,7 +88,6 @@ async def run_scraper():
                 print(f'Ошибка при работе с каналом {username}: {e}')
                 await asyncio.sleep(5)
     finally:
-        # Корректное закрытие сессии
         await client.disconnect()
 
 if __name__ == '__main__':
