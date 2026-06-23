@@ -1,0 +1,627 @@
+{
+  "name": "JobFlow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": 45
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -848,
+        256
+      ],
+      "id": "2aa48cf4-ec02-409c-a894-899d4ce595f5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "vacancies",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "new"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        256
+      ],
+      "id": "2dbd65c7-2ac8-40a9-ba4e-0c3e4fe155b7",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "U3RATwJQsNBS1k3H",
+          "name": "Supabase_JobFlow"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "vacancies",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Split In Batches').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "ignored"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $json.reason }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        464
+      ],
+      "id": "b913a9a7-a478-46fb-91f5-445319eba30c",
+      "name": "Supabase Ignored",
+      "credentials": {
+        "supabaseApi": {
+          "id": "U3RATwJQsNBS1k3H",
+          "name": "Supabase_JobFlow"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        32,
+        208
+      ],
+      "name": "OpenAI Chat Model",
+      "id": "46427b74-ca1f-47c4-ab3c-01b9899fe1c0",
+      "credentials": {
+        "openAiApi": {
+          "id": "QxPaWKEKuAL8q5UB",
+          "name": "OpenAi account 345"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Проанализируй вакансию ниже и верни вердикт в формате JSON согласно системным инструкциям:\n\n{{ $json.description }}",
+        "options": {
+          "systemMessage": "Ты — профессиональный агент-аналитик, работающий в связке с Сергеем (инженер-конструктор, vibe-coder, эксперт по AI-автоматизации). Твоя цель — отсеивать шум и находить для него проектные задачи, требующие системного подхода и быстрой реализации MVP.\n\nЭКСПЕРТИЗА СЕРГЕЯ:\n1. Автоматизация (n8n, Python, API).\n2. AI-агенты и RAG (поиск по документам, ГОСТы, регламенты).\n3. Продуктовая разработка (создание ботов, парсеров, AI-сервисов любого масштаба).\n\nАЛГОРИТМ АНАЛИЗА:\n1. ANTI-FRAUD: Если вакансия — скам (вложения, курсы, \"быстрые деньги\"), ставь \"is_relevant\": false, причина: \"Fraud/Scam\".\n2. ТИП ЗАНЯТОСТИ: Если строго \"full-time office\", ставь \"is_relevant\": false. Проектная/удаленная работа — наш приоритет.\n3. РЕЛЕВАНТНОСТЬ: Одобряй, если есть запрос на Python, n8n, AI, парсинг, RAG или автоматизацию рутины. Не ищи только \"высокую архитектуру\" — любые задачи по созданию инструментов (боты для магазинов, автоматизация таблиц, боты поддержки) подходят идеально.\n4. ОТКЛИК: Если релевантно, напиши краткий, уверенный, технический отклик. Акцент: инженерный опыт и кейсы. Обязательно предложи ознакомиться с портфолио: https://github.com/Aygren.\n\nИНСТРУКЦИЯ ПО ФОРМАТУ (КРИТИЧЕСКИ ВАЖНО):\n1. Отвечай ИСКЛЮЧИТЕЛЬНО валидным JSON-объектом.\n2. НИКАКОГО Markdown (никаких ```json или \n```).\n3. НИКАКИХ вводных слов (\"Конечно\", \"Вот отклик\"). Только чистый JSON.\n4. Структура ответа:\n{\n  \"is_relevant\": true,\n  \"reason\": \"краткое обоснование\",\n  \"response\": {\n    \"text\": \"текст отклика\",\n    \"contacts\": {\n      \"telegram\": \"извлеченный контакт или 'не найден'\"\n    }\n  }\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        32,
+        16
+      ],
+      "name": "AI Agent",
+      "id": "34ba4bb4-323c-4e15-847a-0eecce972ffb",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        256
+      ],
+      "name": "Split In Batches",
+      "id": "6fdcf423-bab9-4f56-84c8-a124664a60cc"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const item = items[0];\n  const parsed = JSON.parse(item.json.output);\n  \n  return [{\n    json: {\n      id: item.json.id || 'unknown',\n      link: item.json.url || item.json.link || 'https://t.me/...', \n      \n      // Данные от AI\n      is_relevant: Boolean(parsed.is_relevant),\n      reason: parsed.reason || \"Причина не указана\",\n      \n      // Обновленные пути согласно новому промпту\n      cover_letter: parsed.response?.text || 'Отклик не сформирован',\n      contact: parsed.response?.contacts?.telegram || 'Контакты не найдены',\n      \n      has_error: true // Сохраняем твою логику: true при успехе\n    }\n  }];\n} catch (error) {\n  // При ошибке парсинга has_error: false\n  return [{ json: { has_error: false, error_details: error.message } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        272
+      ],
+      "id": "f38a8367-69ee-48c3-b0fd-a646b14e418c",
+      "name": "Code for fields"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "vacancies",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Split In Batches').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "sent"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $('Code for fields').item.json.reason }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        272
+      ],
+      "id": "60f29195-b4c9-433c-960c-93631fb2b937",
+      "name": "Supabase Sent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "U3RATwJQsNBS1k3H",
+          "name": "Supabase_JobFlow"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6aee7834-fa0c-4b9e-9a50-61f29e12846b",
+              "leftValue": "={{ $json.has_error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        272
+      ],
+      "id": "0675395e-7c72-4949-9277-1987d86a9feb",
+      "name": "If Error"
+    },
+    {
+      "parameters": {
+        "chatId": "1271666124",
+        "text": "=При обработке вакансии {{ $json.id }} Произошла ошибка",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        432
+      ],
+      "name": "TelegramIfError",
+      "id": "a85c52fe-443b-418a-a527-77a2d5616468",
+      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
+      "credentials": {
+        "telegramApi": {
+          "id": "1eHhExsF58vxP0ar",
+          "name": "Telegram SmartHunt"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76c957f7-439b-4e8f-9321-cd39f6f7cf5d",
+              "leftValue": "={{ $json.is_relevant }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        272
+      ],
+      "id": "272f372e-11db-4991-9de2-ca7a9b88a274",
+      "name": "IfRelevant"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1696,
+        496
+      ],
+      "id": "e970663d-199f-4730-9953-35300734bf61",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "is_relevant",
+              "value": "={{ $json.is_relevant }}",
+              "type": "boolean"
+            },
+            {
+              "id": "2",
+              "name": "reason",
+              "value": "={{ $json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "cover_letter",
+              "value": "={{ $json.cover_letter }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "contact",
+              "value": "={{ $json.contact }}",
+              "type": "string"
+            },
+            {
+              "id": "82a70978-bc33-4c51-8d77-a54e5f9b7cac",
+              "name": "link",
+              "value": "={{ $('Split In Batches').item.json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        272
+      ],
+      "name": "Edit Fields",
+      "id": "50402fbe-49d9-4dd4-9a19-f62df44d9c69"
+    },
+    {
+      "parameters": {
+        "chatId": "1271666124",
+        "text": "=🔥 Найдена вакансия!\n\nКонтакт: {{ $json.contact }}\nСсылка на вакансию: {{ $json.link }}\nОбоснование: {{ $json.reason }}\n\nТекст отклика:\n{{ $json.cover_letter }}\n",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        272
+      ],
+      "name": "Telegram",
+      "id": "c4f6fb58-50aa-4097-8c2f-f6b44fdb8a03",
+      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "1eHhExsF58vxP0ar",
+          "name": "Telegram SmartHunt"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        272
+      ],
+      "id": "ee90143e-fbe7-449f-bb43-868cad6ade66",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// return items.slice(1);\n// Укажите здесь ID вакансии, которую нужно обработать\nconst TARGET_ID = 2; \n\n// Получаем все входящие данные\nconst items = $input.all();\n\n// Фильтруем массив: оставляем только тот элемент, у которого id совпадает с заданным\nconst filtered = items.filter(item => item.json.id === TARGET_ID);\n\nif (filtered.length === 0) {\n    throw new Error(`Вакансия с ID ${TARGET_ID} не найдена!`);\n}\n\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        256
+      ],
+      "id": "b7150f6c-f168-4a12-88cd-0a5930c64c0a",
+      "name": "ChangeNumberOfVacasy",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "ChangeNumberOfVacasy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Supabase Ignored": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code for fields": {
+      "main": [
+        [
+          {
+            "node": "If Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Error": {
+      "main": [
+        [
+          {
+            "node": "IfRelevant",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TelegramIfError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfRelevant": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase Ignored",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Sent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "Supabase Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code for fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChangeNumberOfVacasy": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a8126453-b89a-47e8-b4eb-b6b4f1aac9d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f4300700b5a89163b88ad6a908ff9e3076c705e8b03a3f40f03ff2f29f7e4289"
+  },
+  "id": "KV72QnOqkwZvgI2M",
+  "tags": []
+}
