@@ -28,6 +28,11 @@ async def run_scraper():
     if not supabase or api_id == 0:
         print("Парсер не может запуститься: нет настроек.")
         return
+    
+    print(f"DEBUG: Session string is: {session_string[:10]}...{session_string[-10:] if session_string else 'None'}", flush=True)
+    if not session_string:
+        print("КРИТИЧЕСКАЯ ОШИБКА: Переменная SESSION_STRING пуста!", flush=True)
+        return
 
     channels = get_active_channels()
     if not channels:
