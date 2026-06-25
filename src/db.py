@@ -6,12 +6,12 @@ load_dotenv()
 supabase = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
 def get_active_channels():
-    """Получает список юзернеймов всех активных каналов."""
+    """Получает список всех активных каналов с их последним обработанным ID."""
     response = supabase.table("active_channels")\
-        .select("username")\
+        .select("username, last_message_id")\
         .eq("is_active", True)\
         .execute()
-    return [item['username'] for item in response.data]
+    return response.data
 
 def update_last_message_id(username, last_id):
     """Обновляет ID последнего сообщения для канала."""
