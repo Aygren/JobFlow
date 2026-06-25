@@ -6,8 +6,8 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "triggerAtMinute": 45
+              "field": "minutes",
+              "minutesInterval": 30
             }
           ]
         }
@@ -59,7 +59,7 @@
             {
               "keyName": "id",
               "condition": "eq",
-              "keyValue": "={{ $('Split In Batches').item.json.id }}"
+              "keyValue": "={{ $('Code for fields').item.json.id }}"
             }
           ]
         },
@@ -71,7 +71,7 @@
             },
             {
               "fieldId": "reason",
-              "fieldValue": "={{ $json.reason }}"
+              "fieldValue": "={{ $('Code for fields').item.json.reason }}"
             }
           ]
         }
@@ -79,8 +79,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1136,
-        464
+        1232,
+        256
       ],
       "id": "b913a9a7-a478-46fb-91f5-445319eba30c",
       "name": "Supabase Ignored",
@@ -116,7 +116,7 @@
         "promptType": "define",
         "text": "=Проанализируй вакансию ниже и верни вердикт в формате JSON согласно системным инструкциям:\n\n{{ $json.description }}",
         "options": {
-          "systemMessage": "Ты — профессиональный агент-аналитик, работающий в связке с Сергеем (инженер-конструктор, vibe-coder, эксперт по AI-автоматизации). Твоя цель — отсеивать шум и находить для него проектные задачи, требующие системного подхода и быстрой реализации MVP.\n\nЭКСПЕРТИЗА СЕРГЕЯ:\n1. Автоматизация (n8n, Python, API).\n2. AI-агенты и RAG (поиск по документам, ГОСТы, регламенты).\n3. Продуктовая разработка (создание ботов, парсеров, AI-сервисов любого масштаба).\n\nАЛГОРИТМ АНАЛИЗА:\n1. ANTI-FRAUD: Если вакансия — скам (вложения, курсы, \"быстрые деньги\"), ставь \"is_relevant\": false, причина: \"Fraud/Scam\".\n2. ТИП ЗАНЯТОСТИ: Если строго \"full-time office\", ставь \"is_relevant\": false. Проектная/удаленная работа — наш приоритет.\n3. РЕЛЕВАНТНОСТЬ: Одобряй, если есть запрос на Python, n8n, AI, парсинг, RAG или автоматизацию рутины. Не ищи только \"высокую архитектуру\" — любые задачи по созданию инструментов (боты для магазинов, автоматизация таблиц, боты поддержки) подходят идеально.\n4. ОТКЛИК: Если релевантно, напиши краткий, уверенный, технический отклик. Акцент: инженерный опыт и кейсы. Обязательно предложи ознакомиться с портфолио: https://github.com/Aygren.\n\nИНСТРУКЦИЯ ПО ФОРМАТУ (КРИТИЧЕСКИ ВАЖНО):\n1. Отвечай ИСКЛЮЧИТЕЛЬНО валидным JSON-объектом.\n2. НИКАКОГО Markdown (никаких ```json или \n```).\n3. НИКАКИХ вводных слов (\"Конечно\", \"Вот отклик\"). Только чистый JSON.\n4. Структура ответа:\n{\n  \"is_relevant\": true,\n  \"reason\": \"краткое обоснование\",\n  \"response\": {\n    \"text\": \"текст отклика\",\n    \"contacts\": {\n      \"telegram\": \"извлеченный контакт или 'не найден'\"\n    }\n  }\n}"
+          "systemMessage": "Ты — профессиональный агент-аналитик, работающий в связке с Сергеем (инженер-конструктор, vibe-coder, эксперт по AI-автоматизации). Твоя цель — отсеивать шум, классифицировать вакансии и находить проектные задачи, требующие системного подхода и быстрой реализации MVP.\n\nЭКСПЕРТИЗА СЕРГЕЯ:\n1. Автоматизация (n8n, Python, API).\n2. AI-агенты и RAG (поиск по документам, ГОСТы, регламенты).\n3. Продуктовая разработка (создание ботов, парсеров, AI-сервисов любого масштаба).\n\nКАТЕГОРИИ КЛАССИФИКАЦИИ И АЛГОРИТМ:\nОпредели строго одну из трех категорий для вакансии и запиши её в поле \"category\":\n\n1. \"trash\" (Мусор/Скам/Спам):\n- Явный мошеннический скам (вложения денег, платные курсы, схемы \"быстрого заработка\").\n- Сетевой маркетинг, реклама услуг, инфоцыганство или пустые сообщения без описания сути работы.\n\n2. \"ignored\" (Не подходит):\n- Строго \"full-time office\" или \"full-time remote\" с жестким графиком, ЕСЛИ в тексте нет прямого и точного попадания в стек Сергея (Python, n8n, RAG, AI-агенты). Обычную рутинную full-time работу пропускать не нужно.\n- Вакансии с абсолютно чуждым стеком (PHP, Java, Solidity, Ruby), где автоматизация и AI даже не упоминаются.\n\n3. \"sent\" (Релевантно/Берем в работу):\n- Проектная работа, фриланс, частичная занятость, гибкий график по автоматизации, созданию ботов, парсеров, интеграции LLM.\n- ИСКЛЮЧЕНИЕ ДЛЯ FULL-TIME: Допускается full-time только в том случае, если это хорошее попадание под требования (запрос именно на разработку AI-агентов, RAG-систем на Python или автоматизацию через n8n).\n\nИНСТРУКЦИЯ ПО ОТКЛИКУ (Только для категории \"sent\"):\n- Если категория \"sent\", напиши в поле \"cover_letter\" очень краткий, уверенный, технический отклик без воды. Акцент на инженерный опыт и готовые кейсы. Обязательно предложи ознакомиться с портфолио: https://github.com/Aygren.\n- Если категория \"trash\" или \"ignored\", в поле \"cover_letter\" напиши \"Не требуется\".\n- В поле \"reason\" напиши не длинное обоснование, почему вакансия отнесена именно к этой категории.\n\nИНСТРУКЦИЯ ПО ФОРМАТУ (КРИТИЧЕСКИ ВАЖНО):\n1. Отвечай ИСКЛЮЧИТЕЛЬНО валидным JSON-объектом.\n2. НИКАКОГО Markdown (абсолютно никаких ```json или ``` в начале и конце).\n3. НИКАКИХ вводных слов перед JSON. Только чистый JSON-объект.\n\nСтруктура ответа:\n{\n  \"category\": \"sent\" или \"ignored\" или \"trash\",\n  \"reason\": \"не длинное обоснование выбора категории и анализ текста\",\n  \"response\": {\n    \"cover_letter\": \"текст отклика или 'Не требуется'\",\n    \"contacts\": {\n      \"telegram\": \"извлеченный контакт/юзернейм/ссылка или 'не найден'\"\n    }\n  }\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -148,7 +148,7 @@
     },
     {
       "parameters": {
-        "jsCode": "try {\n  const item = items[0];\n  const parsed = JSON.parse(item.json.output);\n  \n  return [{\n    json: {\n      id: item.json.id || 'unknown',\n      link: item.json.url || item.json.link || 'https://t.me/...', \n      \n      // Данные от AI\n      is_relevant: Boolean(parsed.is_relevant),\n      reason: parsed.reason || \"Причина не указана\",\n      \n      // Обновленные пути согласно новому промпту\n      cover_letter: parsed.response?.text || 'Отклик не сформирован',\n      contact: parsed.response?.contacts?.telegram || 'Контакты не найдены',\n      \n      has_error: true // Сохраняем твою логику: true при успехе\n    }\n  }];\n} catch (error) {\n  // При ошибке парсинга has_error: false\n  return [{ json: { has_error: false, error_details: error.message } }];\n}"
+        "jsCode": "try {\n  const item = items[0];\n  const parsed = JSON.parse(item.json.output);\n  \n  // Определяем статус на основе категории от AI\n  let finalStatus = 'ignored';\n  if (parsed.category === 'sent') finalStatus = 'sent';\n  if (parsed.category === 'trash') finalStatus = 'trash';\n  if (parsed.category === 'ignored') finalStatus = 'ignored';\n\n  return [{\n    json: {\n      id: item.json.id || 'unknown',\n      link: item.json.url || item.json.link || 'https://t.me/...', \n      \n      // Направление для Switch-ноды\n      final_status: finalStatus,\n      \n      // Теперь здесь всегда будет подробный разбор вакансии от AI для базы данных\n      reason: parsed.reason || \"Причина не указана агентом\",\n      \n      // Сопроводительное письмо (будет заполнено только для sent)\n      cover_letter: parsed.response?.cover_letter || 'Отклик не сформирован',\n      contact: parsed.response?.contacts?.telegram || 'Контакты не найдены',\n      \n      has_error: true\n    }\n  }];\n} catch (error) {\n  return [{ json: { has_error: false, error_details: error.message, final_status: 'error' } }];\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -188,8 +188,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1488,
-        272
+        1680,
+        96
       ],
       "id": "60f29195-b4c9-433c-960c-93631fb2b937",
       "name": "Supabase Sent",
@@ -236,71 +236,13 @@
     },
     {
       "parameters": {
-        "chatId": "1271666124",
-        "text": "=При обработке вакансии {{ $json.id }} Произошла ошибка",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        928,
-        432
-      ],
-      "name": "TelegramIfError",
-      "id": "a85c52fe-443b-418a-a527-77a2d5616468",
-      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
-      "credentials": {
-        "telegramApi": {
-          "id": "1eHhExsF58vxP0ar",
-          "name": "Telegram SmartHunt"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "76c957f7-439b-4e8f-9321-cd39f6f7cf5d",
-              "leftValue": "={{ $json.is_relevant }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        928,
-        272
-      ],
-      "id": "272f372e-11db-4991-9de2-ca7a9b88a274",
-      "name": "IfRelevant"
-    },
-    {
-      "parameters": {
-        "numberInputs": 3
+        "numberInputs": 5
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1696,
-        496
+        1984,
+        480
       ],
       "id": "e970663d-199f-4730-9953-35300734bf61",
       "name": "Merge"
@@ -346,39 +288,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1120,
-        272
+        1232,
+        96
       ],
       "name": "Edit Fields",
       "id": "50402fbe-49d9-4dd4-9a19-f62df44d9c69"
-    },
-    {
-      "parameters": {
-        "chatId": "1271666124",
-        "text": "=🔥 Найдена вакансия!\n\nКонтакт: {{ $json.contact }}\nСсылка на вакансию: {{ $json.link }}\nОбоснование: {{ $json.reason }}\n\nТекст отклика:\n{{ $json.cover_letter }}\n",
-        "additionalFields": {
-          "appendAttribution": false,
-          "parse_mode": "HTML"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        1280,
-        272
-      ],
-      "name": "Telegram",
-      "id": "c4f6fb58-50aa-4097-8c2f-f6b44fdb8a03",
-      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
-      "alwaysOutputData": false,
-      "retryOnFail": false,
-      "credentials": {
-        "telegramApi": {
-          "id": "1eHhExsF58vxP0ar",
-          "name": "Telegram SmartHunt"
-        }
-      },
-      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -397,7 +311,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// return items.slice(1);\n// Укажите здесь ID вакансии, которую нужно обработать\nconst TARGET_ID = 2; \n\n// Получаем все входящие данные\nconst items = $input.all();\n\n// Фильтруем массив: оставляем только тот элемент, у которого id совпадает с заданным\nconst filtered = items.filter(item => item.json.id === TARGET_ID);\n\nif (filtered.length === 0) {\n    throw new Error(`Вакансия с ID ${TARGET_ID} не найдена!`);\n}\n\nreturn filtered;"
+        "jsCode": "// return items.slice(1);\n// Укажите здесь ID вакансии, которую нужно обработать\nconst TARGET_ID = 805; \n\n// Получаем все входящие данные\nconst items = $input.all();\n\n// Фильтруем массив: оставляем только тот элемент, у которого id совпадает с заданным\nconst filtered = items.filter(item => item.json.id === TARGET_ID);\n\nif (filtered.length === 0) {\n    throw new Error(`Вакансия с ID ${TARGET_ID} не найдена!`);\n}\n\nreturn filtered;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -406,8 +320,201 @@
         256
       ],
       "id": "b7150f6c-f168-4a12-88cd-0a5930c64c0a",
-      "name": "ChangeNumberOfVacasy",
-      "disabled": true
+      "name": "ChangeNumberOfVacasy"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.final_status }}",
+                    "rightValue": "sent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "68a69cfd-85ca-4c6e-a1e5-bc3666385d7e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2b40245e-3223-44f7-8a2f-30fce35c24e5",
+                    "leftValue": "={{ $json.final_status }}",
+                    "rightValue": "ignored",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ignored"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7c6950cb-36b9-4dfa-abca-da6c9b425290",
+                    "leftValue": "={{ $json.final_status }}",
+                    "rightValue": "trash",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "trash"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        240
+      ],
+      "id": "05061c79-bd83-407d-b564-851ae7e4c878",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "vacancies",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code for fields').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "trash"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $('Code for fields').item.json.reason }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        448
+      ],
+      "id": "134c67cd-98b3-4f2c-81d7-eb72c1dab481",
+      "name": "Supabase Trash",
+      "credentials": {
+        "supabaseApi": {
+          "id": "U3RATwJQsNBS1k3H",
+          "name": "Supabase_JobFlow"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1271666124",
+        "text": "=🔥 Найдена вакансия!\n\nКонтакт: {{ $json.contact }}\nСсылка на вакансию: {{ $json.link }}\nОбоснование: {{ $json.reason }}\n\nТекст отклика:\n{{ $json.cover_letter }}\n",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        96
+      ],
+      "name": "Telegram Sent",
+      "id": "c4f6fb58-50aa-4097-8c2f-f6b44fdb8a03",
+      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "1eHhExsF58vxP0ar",
+          "name": "Telegram SmartHunt"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "1271666124",
+        "text": "=В {{ $json.workflow.name }} при обработке вакансии {{ $json.execution.id }} произошла ошибка {{ $json.execution.error.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        0
+      ],
+      "name": "Telegram Error",
+      "id": "a85c52fe-443b-418a-a527-77a2d5616468",
+      "webhookId": "2b168b4b-f563-4fd3-b5c2-707c7f12edc9",
+      "credentials": {
+        "telegramApi": {
+          "id": "1eHhExsF58vxP0ar",
+          "name": "Telegram SmartHunt"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        0
+      ],
+      "id": "41156fb8-5e10-402b-8cf5-3d380b56e0c4",
+      "name": "Error Trigger"
     }
   ],
   "pinData": {},
@@ -477,9 +584,9 @@
       "main": [
         [
           {
-            "node": "Split In Batches",
+            "node": "Merge",
             "type": "main",
-            "index": 0
+            "index": 3
           }
         ]
       ]
@@ -499,36 +606,12 @@
       "main": [
         [
           {
-            "node": "IfRelevant",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
         ],
-        [
-          {
-            "node": "TelegramIfError",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IfRelevant": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase Ignored",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Supabase Sent": {
@@ -564,27 +647,9 @@
       "main": [
         [
           {
-            "node": "Telegram",
+            "node": "Telegram Sent",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Telegram": {
-      "main": [
-        [
-          {
-            "node": "Supabase Sent",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 2
           }
         ]
       ]
@@ -610,6 +675,71 @@
           }
         ]
       ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase Ignored",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase Trash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Trash": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Telegram Sent": {
+      "main": [
+        [
+          {
+            "node": "Supabase Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -617,7 +747,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "a8126453-b89a-47e8-b4eb-b6b4f1aac9d1",
+  "versionId": "783b9b76-2b0c-4497-92bd-faffe4294a02",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f4300700b5a89163b88ad6a908ff9e3076c705e8b03a3f40f03ff2f29f7e4289"
