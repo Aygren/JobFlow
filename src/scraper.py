@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime, timedelta, timezone
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from supabase import create_client
@@ -38,6 +39,9 @@ async def run_scraper():
     if not channels:
         print('Нет активных каналов для обработки.')
         return
+    
+    # Определяем порог: 60 дней назад от текущего момента
+    sixty_days_ago = datetime.now(timezone.utc) - timedelta(days=60)
 
     client = TelegramClient(StringSession(session_string), api_id, api_hash)
     await client.start()
@@ -53,7 +57,10 @@ async def run_scraper():
 
                 max_id = 0
                 for message in messages:
-                    if not message.text:
+                    if message.date < sixty_days_ago: # 1. Фильтр по дате: пропускаем всё, что старше 60 дней
+                        continue
+
+                    if not message.text:    
                         continue
                     
                     if message.id > max_id:
