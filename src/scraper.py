@@ -13,7 +13,7 @@ session_string = os.environ.get('SESSION_STRING')
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_KEY')
 
-# Проверка переменных
+# Проверка переменных с диагностикой
 if not all([raw_api_id, api_hash, session_string, supabase_url, supabase_key]):
     missing = [k for k, v in {"API_ID": raw_api_id, "API_HASH": api_hash, 
                               "SESSION_STRING": session_string, "SUPABASE_URL": supabase_url, 
@@ -29,7 +29,7 @@ async def run_scraper():
     if not supabase or api_id == 0:
         print("Парсер не может запуститься: нет настроек.")
         return
-    
+    # Блок отладки сессии
     print(f"DEBUG: Session string is: {session_string[:10]}...{session_string[-10:] if session_string else 'None'}", flush=True)
     if not session_string:
         print("КРИТИЧЕСКАЯ ОШИБКА: Переменная SESSION_STRING пуста!", flush=True)
@@ -48,19 +48,23 @@ async def run_scraper():
     print("Подключение к Telegram успешно...", flush=True)
     
     try:
-        for username in channels:
+        for channel in channels:
+            username = channel['username']
+            last_id = channel.get('last_message_id') or 0
+            
             try:
                 print(f'--- Обработка канала: {username} ---')
                 await asyncio.sleep(2)
                 
-                messages = await client.get_messages(username, limit=50)
+                # Инкрементальная загрузка
+                messages = await client.get_messages(username, min_id=last_id, limit=50)
 
-                max_id = 0
+                max_id = last_id
                 for message in messages:
-                    if message.date < sixty_days_ago: # 1. Фильтр по дате: пропускаем всё, что старше 60 дней
+                    # Фильтр N дней
+                    if message.date < sixty_days_ago:
                         continue
-
-                    if not message.text:    
+                    if not message.text:
                         continue
                     
                     if message.id > max_id:
@@ -68,27 +72,26 @@ async def run_scraper():
                         
                     url = f"https://t.me/{username}/{message.id}"
                     
-                    # Проверяем, есть ли уже такая вакансия
+                    # Проверка дубликата
                     existing = supabase.table("vacancies").select("id").eq("url", url).execute()
                     if existing.data:
-                        print(f"Вакансия уже существует, стоп по каналу {username}: {url}", flush=True)
-                        break  # Прерываем цикл обработки этого канала
+                        continue
                     
                     vacancy_data = {
                         "title": (message.text[:47] + '...') if len(message.text) > 50 else message.text,
                         "url": url,
                         "description": message.text,
                         "status": "new",
-                        "created_at": message.date.isoformat() # Добавляем реальную дату сообщения
+                        "created_at": message.date.isoformat()
                     }
                     
                     try:
                         supabase.table("vacancies").insert(vacancy_data).execute()
                         print(f"Вакансия добавлена: {url}", flush=True)
                     except Exception as e:
-                        print(f"Ошибка при записи: {e}")
+                        print(f"Ошибка при записи в Supabase: {e}")
 
-                if max_id > 0:
+                if max_id > last_id:
                     update_last_message_id(username, max_id)
                     print(f"Обновлен last_message_id для {username}: {max_id}")
 
