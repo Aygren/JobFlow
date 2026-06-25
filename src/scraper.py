@@ -78,7 +78,8 @@ async def run_scraper():
                         "title": (message.text[:47] + '...') if len(message.text) > 50 else message.text,
                         "url": url,
                         "description": message.text,
-                        "status": "new"
+                        "status": "new",
+                        "created_at": message.date.isoformat() # Добавляем реальную дату сообщения
                     }
                     
                     try:
