@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  jobflow-parser:
+    build: .
+    container_name: jobflow_parser_app
+    restart: always
+    network_mode: "host"
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
