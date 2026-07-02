@@ -1,11 +1,29 @@
 version: '3.8'
 
 services:
+  xray-client:
+    image: teddysun/xray:latest
+    container_name: jobflow_xray_client
+    restart: always
+    volumes:
+      - ./xray_config.json:/etc/xray/config.json
+    environment:
+      - XRAY_UUID=${XRAY_UUID}
+      - XRAY_PUBLIC_KEY=${XRAY_PUBLIC_KEY}
+      - XRAY_SNI=${XRAY_SNI}
+      - XRAY_SHORT_ID=${XRAY_SHORT_ID}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
   jobflow-parser:
     build: .
     container_name: jobflow_parser_app
     restart: always
-    network_mode: "host"
+    depends_on:
+      - xray-client
     env_file:
       - .env
     logging:

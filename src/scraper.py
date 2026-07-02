@@ -1,5 +1,6 @@
 import os
 import asyncio
+import socks
 from datetime import datetime, timedelta, timezone
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -43,7 +44,7 @@ async def run_scraper():
     # Определяем порог: 60 дней назад от текущего момента
     sixty_days_ago = datetime.now(timezone.utc) - timedelta(days=60)
 
-    client = TelegramClient(StringSession(session_string), api_id, api_hash)
+    client = TelegramClient(StringSession(session_string), api_id, api_hash, proxy=(socks.SOCKS5, 'xray-client', 1080)
     await client.start()
     print("Подключение к Telegram успешно...", flush=True)
     
